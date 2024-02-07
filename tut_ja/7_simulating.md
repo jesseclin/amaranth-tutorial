@@ -1,10 +1,10 @@
-# Simulating
+# シミュレーション
 
-The best way to simulate a module is through Amaranth's `Simulator`.
+モジュールをシミュレートする最良の方法は、Amaranthの `Simulator` を使用することです。
 
-## Define your ports
+## ポートを定義する
 
-Define a `ports` function in your module which returns an array of your module's ports:
+モジュール内に `ports` 関数を定義し、モジュールのポートの配列を返します:
 
 ```python
 from amaranth import Elaboratable
@@ -16,9 +16,9 @@ class YourModule(Elaboratable):
         return [self.yourmodule.p1, self.yourmodule.p2, ...]
 ```
 
-## Create a top-level module
+## トップレベルモジュールを作成する
 
-Create a top-level module for your simulation:
+シミュレーションのためのトップレベルモジュールを作成します:
 
 ```python
 from amaranth import Module
@@ -32,14 +32,14 @@ if __name__ == "__main__":
     sim = Simulator(m)
 
     def process():
-        # To be defined
+        # 未定
 
-    sim.add_process(process) # or sim.add_sync_process(process), see below
+    sim.add_process(process) # または、sim.add_sync_process(process) を参照してください。
     with sim.write_vcd("test.vcd", "test.gtkw", traces=yourmodule.ports()):
         sim.run()
 ```
 
-> (This may not be true anymore) There is currently a bug in Amaranth where inputs to your module are not output to the trace file. To get around this, for each such input, place this in your `main` **before** the `Simulator` construction:
+>（これはもう当てはまらないかもしれません）現在、Amaranthにはモジュールへの入力がトレースファイルに出力されないバグがあります。これを解決するために、このような入力ごとに、`Simulator` の構築**前**の `main` に次のコードを配置してください:
 >
 > ```python
 >     input1 = Signal(...)
@@ -47,12 +47,11 @@ if __name__ == "__main__":
 >     ...
 >     sim = Simulator(m)
 > ```
->
-> Inside your `process`, refer to this input as `input1`, not `yourmodule.input1`. This will force Amaranth to include `input1` in the trace file.
+> あなたの `process` の中で、この入力を `yourmodule.input1` ではなく `input1` として参照してください。これにより、Amaranth は `input1` をトレースファイルに含めるようになります。
 
-## Define your clocks, if any
+## クロックを定義する（あれば）
 
-If you have clocks, add each clock after the `Simulator` construction, giving the clock period in seconds. For example, a 1MHz clock for clock domain `fast_clock` and a (nearly) 1.1MHz clock for `faster_clock` would be:
+クロックがある場合は、`Simulator` の構築後に各クロックを追加し、クロック周期を秒単位で指定してください。たとえば、1MHz クロックのクロックドメイン `fast_clock` と、（ほぼ）1.1MHz クロックの `faster_clock` は次のようになります:
 
 ```python
    sim = Simulator(m)
@@ -60,11 +59,11 @@ If you have clocks, add each clock after the `Simulator` construction, giving th
    sim.add_clock(0.91e-6, domain="faster_clock")
 ```
 
-Leaving out `domain` will cause the clock period to be assigned to the default clock domain, `sync`.
+`domain` を省略すると、クロック周期がデフォルトのクロックドメインである `sync` に割り当てられます。
 
-## The process function
+## プロセス関数
 
-The `process` function is a Python generator that Amaranth calls to see what to do next in the simulation. Since it is a generator, `process` must `yield` a statement to perform. For example:
+`process` 関数は、Amaranth がシミュレーションで次に何をするかを知るために呼び出す Python ジェネレーターです。ジェネレーターであるため、`process` は実行するステートメントを `yield` しなければなりません。例えば:
 
 ```python
     def process():
@@ -72,9 +71,9 @@ The `process` function is a Python generator that Amaranth calls to see what to 
         yield y.eq(0xFF)
 ```
 
-The above would set `x` to 0 and `y` to 0xFF, with effectively no delay between them.
+上記の例では、`x` を 0 に設定し、`y` を 0xFF に設定します。これらの間に実質的な遅延はありません。
 
-You can yield Amaranth `Value`s, which you can then use, for example, to do various comparisons:
+Amaranthの `Value` を `yield` できます。これを使用して、さまざまな比較を行うことができます:
 
 ```python
     def process():
@@ -88,9 +87,9 @@ You can yield Amaranth `Value`s, which you can then use, for example, to do vari
             print(f"Oh noes! Error! Got {got:02x}, wanted {want:02x}")
 ```
 
-In the above example, `x` will be set to 0, then there will be a one microsecond delay, then `y` will be set to 0xFF, all combinatorial logic will be given a chance to settle, and finally `yourmodule.sum` and `(x+y)[:8]` will be evaluated, and if they are not equal, a diagnostic message is sent to the terminal output.
+上記の例では、`x` が 0 に設定され、その後1マイクロ秒の遅延が発生し、`y` が 0xFF に設定されます。すべての組み合わせ論理に解決するチャンスが与えられ、最後に `yourmodule.sum` と `(x+y)[:8]` が評価され、それらが等しくない場合、診断メッセージが端末出力に送信されます。
 
-You can even have more than one process running at a time!
+さらに、同時に複数のプロセスを実行することもできます!
 
 ```python
     def x_process():
@@ -107,13 +106,13 @@ You can even have more than one process running at a time!
     sim.add_process(y_process)
 ```
 
-In the above example, `x` will be set to 0 at time 1 microsecond, and `y` will be set to 0xFF at time 1.2 microseconds.
+上記の例では、`x` は1マイクロ秒で0に設定され、`y` は1.2マイクロ秒で0xFFに設定されます。
 
-**Warning**: driving the same signal from more than one process can lead to undefined behavior if both processes assign to the signal simultaneously.
+**警告**: 同じ信号を複数のプロセスから駆動すると、両方のプロセスが信号に同時に割り当てると未定義の動作が発生する可能性があります。
 
-### Non-synchronous processes
+### 非同期プロセス
 
-If you want to specify exactly when signals change based on time, then you can create a non-synchronous `process`. You must add such a process to the simulator via `add_process`:
+時間に基づいて信号がいつ変化するかを正確に指定したい場合は、非同期の `process` を作成できます。このようなプロセスをシミュレータに追加するには、`add_process` を使用します:
 
 ```python
     sim.add_process(process)
@@ -121,16 +120,16 @@ If you want to specify exactly when signals change based on time, then you can c
 
 ### Synchronous processes
 
-If you want to specify when signals change based on clock edges, then you can create a synchronous `process`. You can add such a process to the simulator via `add_sync_process`, specifying the clock domain it should be clocked from:
+クロックエッジに基づいて信号の変化を指定したい場合は、同期 `process` を作成できます。このようなプロセスをシミュレータに追加するには、`add_sync_process` を使用し、それがクロックされるクロックドメインを指定します:
 
 ```python
     sim.add_sync_process(process1, domain="name1")
     sim.add_sync_process(process2, domain="name2")
 ```
 
-If you `yield` with no value from a synchronous process, then the process will wait for the next clock edge. Note that for synchronous processes, one clock edge will always occur before the process starts, so take that into account when you look at your traces.
+同期プロセスから値なしで `yield` すると、そのプロセスは次のクロックエッジを待ちます。同期プロセスでは、プロセスが開始される前に常に1つのクロックエッジが発生することに注意してください。トレースを確認する際には、これを考慮してください。
 
-It is also important to understand when statements are executed in relation to clock edges. They are always executed **infinitesimally after** the previous clock edge. Thus, in this example:
+また、ステートメントがクロックエッジに対していつ実行されるかを理解することも重要です。ステートメントは、常に**直前のクロックエッジの直後**に実行されます。したがって、次の例では:
 
 ```python
     def process():
@@ -140,34 +139,34 @@ It is also important to understand when statements are executed in relation to c
         yield          # step 4
 ```
 
-there will be one clock edge that always takes place before the process runs. Then `x` is set to 0 (step 1). Then another clock edge happens (step 2). `x` is set to 1 infinitesimally after that clock edge (step 3). Then another clock edge happens (step 4). In the traces, you will not see signals change "just after" the clock edge. They will appear to be coincident with the clock edge. Just remember the rule that signals that appear to change coincident with a clock edge actually change just after that clock edge. Outputs that change like that can be considered to have been "caused" by the clock edge.
+プロセスが実行される前に常に1つのクロックエッジが発生します。その後、`x` が0に設定されます（ステップ1）。その後、別のクロックエッジが発生します（ステップ2）。`x` は、そのクロックエッジの直後に無限小の時間で1に設定されます（ステップ3）。その後、さらに別のクロックエッジが発生します（ステップ4）。トレースでは、信号の変化がクロックエッジの直後に表示されるわけではありません。それらはクロックエッジと一致して現れます。信号の変化がクロックエッジの直後に行われるというルールを覚えておいてください。そのように変化する出力は、実際にはそのクロックエッジの直後に変化したと考えることができます。
 
-### Passive and active processes
+### パッシブとアクティブなプロセス
 
-Processes may be passive or active. When an *active* process runs out of things to tell the simulator to do, it asks the simulator to finish. In effect, it controls the endpoint of the simulator. The simulation ends when all active processes are done. A *passive* process, on the other hand, doesn't ask the simulator to finish.
+プロセスはパッシブまたはアクティブになります。*アクティブ* プロセスは、シミュレーターに実行する指示がなくなると、シミュレーターに終了を要求します。実際には、それがシミュレーターの終了点を制御します。すべてのアクティブなプロセスが終了すると、シミュレーションが終了します。一方、*パッシブ* プロセスは、シミュレーターに終了を要求しません。
 
-By default, processes added with `add_process` and `add_sync_process` are active. A process can change its mode using `yield Active()` or `yield Passive()`.
+デフォルトでは、`add_process` および `add_sync_process` で追加されたプロセスはアクティブです。プロセスは `yield Active()` または `yield Passive()` を使用してモードを変更できます。
 
-## Ending the simulation
+## シミュレーションの終了
 
-As mentioned above, the simulation ends when all active processes are done. This is how `sim.run()` works.
+上記のように、すべてのアクティブなプロセスが終了すると、シミュレーションが終了します。これが `sim.run()` の動作です。
 
-However, you can instead use `sim.run_until()`, which lets you end the simulation at a particular time. The `run_passive` key is `False` by default, meaning that the simulation will also end if all active processes are done. This behavior can be changed by setting `run_passive` to `True`, in which case the simulation will only end once the specified time is reached. For example, the following will run the simulation for 100 microseconds and then stop, regardless of whether the active processes are done:
+ただし、代わりに `sim.run_until()` を使用して、特定の時間でシミュレーションを終了できます。`run_passive` キーはデフォルトで `False` であり、すべてのアクティブなプロセスが終了した場合にもシミュレーションが終了します。この動作は、`run_passive` を `True` に設定することで変更できます。この場合、シミュレーションは指定された時間に到達するまで終了しません。たとえば、次のようにして、100マイクロ秒の間シミュレーションを実行し、アクティブなプロセスが完了しているかどうかに関係なく、停止します：
 
 ```python
     with sim.write_vcd("test.vcd", "test.gtkw", traces=yourmodule.ports()):
         sim.run_until(100e-6, run_passive=True)
 ```
 
-## Running the simulation and viewing the output
+## シミュレーションの実行と出力の表示
 
-The simulation is run simply by running the main module:
+シミュレーションは、単純にメインモジュールを実行することで実行されます：
 
 ```sh
 python3 main_module.py
 ```
 
-The output should be a `test.vcd` file and a `test.gtkw` file. Running `gtkwave` will allow you to view the output. Running it on `test.vcd` will make you select the signals you want to see when `gtkwave` opens, while running it on `test.gtkw` will open `gtkwave` showing the signals in the `traces` key that you gave in the call to `sim.write_vcd()`.
+出力は `test.vcd` ファイルと `test.gtkw` ファイルです。`gtkwave` を実行すると、出力を表示できます。`gtkwave` を `test.vcd` に対して実行すると、`gtkwave` が開いたときに表示する信号を選択する必要があります。一方、`test.gtkw` に対して実行すると、`sim.write_vcd()` の呼び出しで与えた `traces` キーに含まれる信号が表示されます。
 
 ```sh
 gtkwave test.vcd

@@ -185,7 +185,7 @@ yy = Array([Array([Signal(unsigned(16)) for _ in range(5)]) for _ in range(3)])
 z = y[2]
 ```
 
-もしインデックスが範囲外の場合、これは「エラボレート時間」エラーを引き起こします。
+もしインデックスが範囲外の場合、これは "エラボレート時間" エラーを引き起こします。
 
 しかし、別のシグナルでインデックスを行うこともできます:
 
@@ -237,7 +237,7 @@ class MyLayout(Layout):
         ])
 ```
 
-Here is an example of a bus with 8 data bits, 16 address bits, and some control signals:
+以下は、8ビットのデータビット、16ビットのアドレスビット、およびいくつかの制御信号を持つバスの例です:
 
 ```python
 class BusLayout(Layout):
@@ -250,7 +250,7 @@ class BusLayout(Layout):
         ])
 ```
 
-A signal in a layout can have its shape be a layout:
+レイアウト内の信号は、その形状をレイアウトにすることができます:
 
 ```python
 class DataBusLayout(Layout):
@@ -273,9 +273,9 @@ class AllBusLayout(Layout):
         ])
 ```
 
-### Laying out a Record with a Layout
+### レイアウトとともにレコードをレイアウトする
 
-Once a `Layout` is defined, you can define a `Record` using that `Layout`, and use it as a signal:
+一度`Layout`が定義されると、その`Layout`を使用して`Record`を定義し、信号として使用することができます:
 
 ```python
 class Bus(Record):
@@ -284,46 +284,46 @@ class Bus(Record):
 
 ...
 
-# Later, in a Module:
+# 後で、モジュール内で:
     self.bus = Bus()
     m.d.comb += self.bus.data.eq(0xFF)
     m.d.sync += self.bus.wr.eq(0)
 
-# You can even operate on the entire record:
+# レコード全体で操作することもできます:
     self.bus2 = Bus()
     m.d.comb += self.bus2.eq(self.bus)
 ```
 
-### Directions and connecting records
+### 方向とレコードの接続
 
-It is often advantageous to define signals so that the zero value means either invalid or inactive. That way, you can have many of those signals and logical-or them together. So for example, you might have three modules, each of which output a one-bit `write` signal, but only one module will write at a time. Then if your `write` signal is active high (so zero means no write), you can simply logical-or the `write` signals from each module together to get a master `write` signal.
+ゼロの値が無効または非アクティブを意味するように信号を定義することは、しばしば有利です。その方法で、多くの信号を持ち、それらを論理和で結合できます。たとえば、各々が1ビットの `write` 信号を出力する3つのモジュールがあるかもしれませんが、そのうちの1つのモジュールのみが書き込みを行います。その後、`write` 信号がアクティブ・ハイである場合（つまり、ゼロが書き込みなしを意味する場合）、各モジュールからの `write` 信号を論理和して、マスター `write` 信号を取得できます。
 
-As another example, each module could output 8 bits of data, but only one module at a time would send data to the data bus. In this case, if a module is inactive, it should output 0 on its `data` port. The value of the data bus is then just the values of all modules' `data` ports, logical-ored together.
+別の例として、各モジュールは8ビットのデータを出力しますが、データバスにデータを送信するのは1つのモジュールのみです。この場合、モジュールが非アクティブである場合、その `data` ポートには0を出力する必要があります。その後、データバスの値はすべてのモジュールの `data` ポートの値を論理和したものになります。
 
-This method of "connecting" signals together is called *fan-in*. If the direction of each signal in a record's layout is `DIR_FANIN`, then you can connect several records to a "master" record like this:
+信号を "接続" するこの方法は *ファンイン(fan-in)* と呼ばれます。レコードのレイアウト内の各信号の方向が `DIR_FANIN` の場合、次のように複数のレコードを "マスター" レコードに接続できます:
 
 ```python
     self.master_record = Bus()
     m.d.comb += self.master_record.connect(bus1, bus2, bus3, ...)
 ```
 
-The `connect` method on a record returns an array of statements which logical-ors each signal together. The exact same thing could be accomplished "manually" by operating on the entire record:
+レコードの `connect` メソッドは、各信号を論理和演算しているステートメントの配列を返します。まったく同じことが、レコード全体に対して "手動で" 操作することでも実現できます:
 
 ```python
     self.master_record = Bus()
     m.d.comb += self.master_record.eq(bus1 | bus2 | bus3 | ...)
 ```
 
-The disadvantage is that `connect` can connect *parts* of records, if the field names match. In this sense, the "subordinate" records must have every signal that the "master" record has. That is, the "subordinate" records can have extra signals, but the "master" record must not.
+欠点は、`connect` がレコードの*部分*を接続できるということです。フィールド名が一致する場合、この意味では、 "従属する" レコードは "マスター" レコードと同じすべての信号を持っていなければなりません。つまり、 "従属する" レコードには余分な信号が含まれる場合がありますが、 "マスター" レコードには含まれていてはいけません。
 
-*Fan-out* is where each subordinate record gets a copy of the master record. If the direction of each signal in a record's layout is `DIR_FANOUT`, then you can connect several records to a "master" record like this:
+*Fan-out* とは、各従属レコードがマスターレコードのコピーを受け取る方法です。レコードのレイアウト内の各信号の方向が `DIR_FANOUT` である場合、次のように複数のレコードを "マスター" レコードに接続できます:
 
 ```python
     self.master_record = Bus()
     m.d.comb += self.master_record.connect(bus1, bus2, bus3, ...)
 ```
 
-The syntax is exactly the same, but the direction is different, from master record to each subordinate record. Again, you could do this "manually":
+構文はまったく同じですが、方向が異なります。マスターレコードから各従属レコードへ向かいます。同様に、これを "手動" で行うこともできます:
 
 ```python
     self.master_record = Bus()
@@ -335,4 +335,5 @@ The syntax is exactly the same, but the direction is different, from master reco
     ]
 ```
 
-But this is longer, and also doesn't handle when the master record has extra signals not in the subordinate records.
+しかし、これはより長く、また、マスターレコードに従属レコードにはない追加の信号がある場合に対処できません。
+
