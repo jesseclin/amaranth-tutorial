@@ -1,10 +1,11 @@
-# Coming soon
+# 近日公開予定
 
-## Bounded Model Checking
+## バウンデッドモデルチェック
 
-## Coverage
+## カバレッジ
 
-## Assert, Assume, and Cover for fun and profit.
+## 楽しみと利益のためのアサート、アシューム、およびカバー
+
 
 ```python
 from amaranth.asserts import Assert, Assume, Cover
@@ -33,7 +34,7 @@ from amaranth.asserts import Assert, Assume, Cover
 from amaranth.asserts import Past, Rose, Fell, Stable
 ```
 
-## The sby file
+## sbyファイル
 
 ```ini
 [tasks]
@@ -59,7 +60,7 @@ toplevel.il
 
 ## Running formal verification
 
-Generate the output, then run Symbiyosys:
+出力を生成し、次にSymbiyosysを実行してください:
 
 ```sh
 python3 adder_test.py generate -t il > toplevel.il

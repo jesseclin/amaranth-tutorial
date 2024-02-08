@@ -1,10 +1,10 @@
-# Coming soon
+# 近日公開予定
 
-## Supported devices
+## サポートされているデバイス
 
-See the [vendor directory](https://github.com/amaranth-lang/amaranth/tree/main/amaranth/vendor) for supported devices and toolchain details.
+サポートされているデバイスとツールチェーンの詳細については、[ベンダーディレクトリ](https://github.com/amaranth-lang/amaranth/tree/main/amaranth/vendor) を参照してください。
 
-Devices supported as of 20 Dec 2019:
+2019年12月20日現在、サポートされているデバイス:
 
 | Device            | Platform classname        | Toolchain required |
 | ----------------- | ------------------------- | ------------------ |
@@ -17,68 +17,69 @@ Devices supported as of 20 Dec 2019:
 | Xilinx Spartan 6  | XilinxSpartan3Or6Platform | ISE                |
 | Xilinx UltraScale | XilinxUltraScalePlatform  | Vivado             |
 
+## ボードの定義
 
-## Defining your board
+多くのボードは [amaranth_boards](https://github.com/amaranth-lang/amaranth-boards/tree/main/amaranth_boards) で定義されています。
 
-Many boards are defined for you at [amaranth_boards](https://github.com/amaranth-lang/amaranth-boards/tree/main/amaranth_boards).
+そこから1つをコピーして必要に応じて変更するか、上記でサポートされているデバイスプラットフォームクラスの1つからサブクラス化された新しいクラスを作成できます。
 
-You can copy one from there and modify it to suit your needs, or create a new class subclassed from one of the above supported device platform classes.
+### クラスのプロパティ
 
-### Class properties
+* `device`: 文字列。どれを選択するかはベースプラットフォームクラスを参照してください。これは、正しいチップ用にコンパイルするためのツールチェーンに渡されるオプションに影響を与えます。
+* `package`: 文字列。どれを選択するかはベースプラットフォームクラスを参照してください。これは、チップの正しいパッケージ用にコンパイルするためのツールチェーンに渡されるオプションに影響を与えます。
+* `resources`: `Resource` のリスト。使用するピンの名前と、各ピンに対する構成オプションを指定します。
+* `default_clk`: デフォルトのクロックドメインのクロックのリソース名。
+* `default_rst`: デフォルトのクロックドメインのリセットのリソース名。
+* `connectors`: オプションで、`Connector` のリスト。これがどのような目的に役立つかは明確ではありません。特定のツールチェーンと関連があるかもしれません。
+  
+### リソース
 
-* `device`: a string. See the base platform class for which one to choose. This affects options passed to the toolchain so that it compiles for the correct chip.
-* `package`: a string. See the base platform class for which one to choose. This affects options passed to the toolchain so that it compiles for the correct package of the chip.
-* `resources`: a list of `Resource`. This names the pins you want to use, and configuration options for each such pin.
-* `default_clk`: the name of the resource that is the clock for the default clock domain.
-* `default_rst`: the name of the resource that is the reset for the default clock domain.
-* `connectors`: optional, a list of `Connector`. It isn't obvious what purpose this serves. It may have something to do with certain toolchains.
+`Resource` は、名前、番号、およびリソースの1つ以上の構成項目を含む構造体です。ボードに `Resource` を追加することで、次の2つのことができます。
 
-### Resources
+* デバイス上のピンを構成します。
+* `elaborate` 関数内でプラットフォームから名前でリソースの `Pin` を要求できるようにします。そのような `Pin` には、入力用の `i` や出力用の `o` など、いくつかの `Signal` が関連付けられており、モジュールで使用できます。
 
-A `Resource` is a structure that contains a name, a number, and one or more configuration items for the resource. Adding a `Resource` to a board does two things:
-
-* configures pins on the device
-* allows you to request a resource's `Pin` by name from the platform in your `elaborate` function. Such a `Pin` has several `Signal` associated with it, such as `i` for input and `o` for output, which you can then use in your module.
-
-For example, by including this `Resource` into the platform's `resources` list:
+例えば、このような `Resource` をプラットフォームの `resources` リストに含めることで:
 
 ```python
     Resource("abc", 0, Pins("J3", dir="i"))
 ```
 
-then pin `J3` on the device will be configured as an input, and you can request the `abc` resource's input `Signal` like this:
+その後、デバイス上のピン `J3` が入力として構成され、次のようにして `abc` リソースの入力 `Signal` を要求できます:
 
 ```python
     platform.request("abc").i
 ```
 
-#### Resource configuration items
+#### リソース構成項目
 
-* `Pins`: specifies the space-separated pin names associated with the resource, their direction type, and whether the signal should be automatically inverted when crossing the pin (for, e.g., active low signals). Direction types are:
-  * `i`: input only. Signal for the pin is `.i`
-  * `o`: output only. Signal for the pin is `.o`
-  * `io`: bidirectional. Signals for the pin are `.i` for the input, `.o` for the output, and `.oe` is the direction for the pin: 0 for input, 1 for output
-  * `oe`: tristate. Signals for the pin are `.o` for the output, and `.oe` to enable output: 0 for disable, 1 for enable
+* `Pins`: リソースに関連付けられたスペースで区切られたピン名、方向タイプ、およびピンを横切るときに信号を自動的に反転するかどうか（例：アクティブローレベルの信号）を指定します。方向タイプは次のとおりです：
+  * `i`: 入力のみ。ピンの信号は `.i` です。
+  * `o`: 出力のみ。ピンの信号は `.o` です。
+  * `io`: 双方向。ピンの信号は入力の場合は `.i`、出力の場合は `.o`、ピンの方向のための `.oe` があります：入力の場合は0、出力の場合は1
+  * `oe`: トライステート。ピンの信号は出力の場合は `.o`、出力を有効にするための `.oe` があります：無効にする場合は0、有効にする場合は1
 
-* `PinsN`: shorthand for `Pins`, where all pins are active low.
+* `PinsN`: すべてのピンがアクティブローの場合の `Pins` の省略形。
 
-* `DiffPairs`: specifies the space-separated pin names for one or more differential pairs (positive and negative pins)
+* `DiffPairs`: 1つ以上の差動ペア（正および負のピン）のスペースで区切られたピン名を指定します。
 
-* `Clock`: specifies that the resource is a clock with the given frequency in Hz.
+* `Clock`: 指定された周波数（Hz）のクロックであることを示します。
 
-* `Attrs`: platform-specific attributes such as voltage standard to select.
+* `Attrs`: プラットフォーム固有の属性、例えば選択する電圧規格など。
 
-A full resource specification for a clock pin used on a Lattice ICE40 board could be as follows:
+Lattice ICE40ボードで使用されるクロックピンの完全なリソース仕様は次のようになります:
 
 ```python
     Resource("clk", 0, Pins("J3", dir="i"), Clock(12e6), Attrs(GLOBAL=True, IO_STANDARD="SB_LVCMOS"))
 ```
 
-This says that the `clk` resource is at pin `J3` on the FPGA, has a frequency of 12MHz, is a "global" signal, and uses the LVCMOS voltage standard. Without knowing about the toolchain for the platform, you will not know what attributes are required.
+この記述は、FPGA 上のピン `J3` に `clk` というクロック信号が存在することを示しています。この信号は周波数 12MHz で、FPGA 全体で利用できる "グローバル" 信号であり、LVCMOS 電圧規格を使用しています。
 
-### Example
+ただし、プラットフォームで使用されているツールチェーン（開発環境）を知らなければ、必要な属性情報が何であるかを判断できませんので注意してください。
 
-Example for the Lattice ICE40-HX8K breakout board.
+### 例
+
+Lattice ICE40-HX8Kブレイクアウトボードの例。
 
 ```python
 from amaranth.build import Platform, Resource, Pins, Clock, Attrs, Connector
@@ -99,8 +100,8 @@ class ICE40HX8KBEVNPlatform(LatticeICE40Platform):
                  Attrs(IO_STANDARD="SB_LVCMOS")),  # LED2
     ]
 
-    default_clk = "clk1"  # you must have a default clock resource
-    default_rst = "rst"   # you must have a default reset resource
+    default_clk = "clk1"  # デフォルトのクロックリソースが必要です。
+    default_rst = "rst"   # デフォルトのリセットリソースが必要です。
 
     connectors = [
         Connector(
@@ -138,33 +139,34 @@ class ICE40HX8KBEVNPlatform(LatticeICE40Platform):
         with products.extract("{}.bin".format(name)) as bitstream_filename:
             subprocess.check_call([iceprog, "-S", bitstream_filename])
 
-# Important! For WSL, install
+# 重要！WSLの場合、以下をインストールしてください
 # https://github.com/FPGAwars/toolchain-icestorm/releases/download/v1.11.1/toolchain-icestorm-windows_x86-1.11.1.tar.gz
 #
-# See also the somewhat outdated https://github.com/FPGAwars/toolchain-icestorm/wiki#testing-iceprog
+# また、やや古いですが、https://github.com/FPGAwars/toolchain-icestorm/wiki#testing-iceprog も参照してください。
 
 if __name__ == "__main__":
-    ICE40HX8KBEVNPlatform().build(Blinker(), do_program=True)  # Set to False on WSL!
+    ICE40HX8KBEVNPlatform().build(Blinker(), do_program=True)  # WSLではFalseに設定してください！
 ```
 
-## Building
+## ## ビルド
 
 ```sh
 python3 file.py
 ```
 
-This will result in a directory, `build`, containing the output files:
+これにより、`build` というディレクトリが作成され、出力ファイルが含まれます：
 
-* `top.il`: The ilang output for yosys.
-* `top.bin`: The bitstream to send to the device (e.g. via iceprog)
-* `top.rpt`: Statistics from nextpnr. The most useful is the cell and LUT count at the end.
-* `top.tim`: Timing analysis. Shows how fast you can go. Probably.
+* `top.il`: yosysのilang出力。
+* `top.bin`: デバイスに送信するビットストリーム（例：iceprog経由）。
+* `top.rpt`: nextpnrからの統計情報。最も役立つのは最後のセルとLUTの数です。
+* `top.tim`: タイミング解析。どれくらい高速に実行できるかを示します。おそらく。
+* 
 
-## Appendix: Known Lattice ICE40 attributes
+## 付録: 既知のLattice ICE40属性
 
-* `GLOBAL`: bool. If True, the pin is global. Global pins are designated `GBIN` in the datasheet pin listing.
-* `IO_STANDARD`: string:
-  * `SB_LVCMOS`: for all single-ended pins and differential output pins
-  * `SB_LVDS_INPUT`: for differential input pins
+* `GLOBAL`: bool型。Trueの場合、ピンはグローバルです。グローバルピンはデータシートのピンリストで `GBIN` と指定されます。
+* `IO_STANDARD`: 文字列:
+  * `SB_LVCMOS`: すべてのシングルエンドピンおよび差動出力ピン用
+  * `SB_LVDS_INPUT`: 差動入力ピン用
 
-Other attributes may be supported, but are not documented.
+その他の属性はサポートされる場合がありますが、文書化されていません。
