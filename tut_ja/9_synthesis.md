@@ -148,7 +148,7 @@ if __name__ == "__main__":
     ICE40HX8KBEVNPlatform().build(Blinker(), do_program=True)  # WSLではFalseに設定してください！
 ```
 
-## ## ビルド
+## ビルド
 
 ```sh
 python3 file.py
